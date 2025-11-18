@@ -2,7 +2,7 @@ pipeline {
   agent any
 
   environment {
-    DOCKERHUB_USER = "your_dockerhub_username"   // <---- change this
+    DOCKERHUB_USER = "aishwaryakanago"   // <---- change this
     BACKEND_IMAGE  = "${DOCKERHUB_USER}/devops-mern-backend"
     FRONTEND_IMAGE = "${DOCKERHUB_USER}/devops-mern-frontend"
     KUBECONFIG     = "/var/lib/jenkins/kubeconfig"
