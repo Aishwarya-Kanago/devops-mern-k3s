@@ -2,10 +2,10 @@ pipeline {
   agent any
 
   environment {
-    DOCKERHUB_USER = "aishwaryakanago"   // <---- change this
+    DOCKERHUB_USER = "aishwaryakanago"
     BACKEND_IMAGE  = "${DOCKERHUB_USER}/devops-mern-backend"
     FRONTEND_IMAGE = "${DOCKERHUB_USER}/devops-mern-frontend"
-    KUBECONFIG     = "/var/lib/jenkins/kubeconfig"
+    KUBECONFIG     = "/var/jenkins_home/kubeconfig"
   }
 
   stages {
