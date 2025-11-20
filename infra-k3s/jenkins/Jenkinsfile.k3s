@@ -2,7 +2,7 @@ pipeline {
   agent any
 
   environment {
-    DOCKER_BUILDKIT = "1"        
+    DOCKER_BUILDKIT = "0"        
     DOCKERHUB_USER  = "aishwaryakanago"
     BACKEND_IMAGE   = "${DOCKERHUB_USER}/devops-mern-backend"
     FRONTEND_IMAGE  = "${DOCKERHUB_USER}/devops-mern-frontend"
