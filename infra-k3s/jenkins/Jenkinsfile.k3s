@@ -2,11 +2,17 @@ pipeline {
   agent any
 
   environment {
-    DOCKER_BUILDKIT = "1"        // reduce memory usage during build
+    DOCKER_BUILDKIT = "1"        
     DOCKERHUB_USER  = "aishwaryakanago"
     BACKEND_IMAGE   = "${DOCKERHUB_USER}/devops-mern-backend"
     FRONTEND_IMAGE  = "${DOCKERHUB_USER}/devops-mern-frontend"
-    KUBECONFIG      = "/var/jenkins_home/kubeconfig"
+
+    // K3D kubeconfig location inside Jenkins container
+    KUBECONFIG = "/var/jenkins_home/kubeconfig"
+  }
+
+  triggers {
+    githubPush()   // 🔥 This enables automatic trigger from GitHub webhook
   }
 
   stages {
@@ -61,19 +67,18 @@ pipeline {
         sh """
           docker push ${BACKEND_IMAGE}:${TAG}
           docker push ${BACKEND_IMAGE}:latest
-          
+
           docker push ${FRONTEND_IMAGE}:${TAG}
           docker push ${FRONTEND_IMAGE}:latest
         """
       }
     }
 
-    stage('Deploy to K3s') {
+    stage('Deploy to K3D') {
       steps {
         sh """
           export KUBECONFIG=${KUBECONFIG}
 
-          # Lighter deployment for t3.micro (avoids OOM)
           kubectl set image deployment/backend-deployment backend=${BACKEND_IMAGE}:${TAG}
           kubectl set image deployment/frontend-deployment frontend=${FRONTEND_IMAGE}:${TAG}
 
@@ -85,11 +90,11 @@ pipeline {
   }
 
   post {
-    success { 
-      echo "CI/CD Success: tag = ${env.TAG}" 
+    success {
+      echo "CI/CD Success: tag = ${env.TAG}"
     }
-    failure { 
-      echo "Pipeline failed!" 
+    failure {
+      echo "Pipeline failed!"
     }
   }
 }
