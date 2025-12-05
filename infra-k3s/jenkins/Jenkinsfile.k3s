@@ -2,53 +2,53 @@ pipeline {
   agent any
 
   environment {
-    DOCKER_BUILDKIT = "0"        
     DOCKERHUB_USER  = "aishwaryakanago"
+
     BACKEND_IMAGE   = "${DOCKERHUB_USER}/devops-mern-backend"
     FRONTEND_IMAGE  = "${DOCKERHUB_USER}/devops-mern-frontend"
 
-    // K3D kubeconfig location inside Jenkins container
     KUBECONFIG = "/var/jenkins_home/kubeconfig"
   }
 
   triggers {
-    githubPush()   // 🔥 This enables automatic trigger from GitHub webhook
+    githubPush()
   }
 
   stages {
 
     stage('Checkout') {
-      steps {
-        checkout scm
-      }
+      steps { checkout scm }
     }
 
     stage('Set TAG') {
       steps {
         script {
           env.TAG = "${env.BRANCH_NAME}-${env.GIT_COMMIT.take(7)}"
-          echo "Image tag = ${env.TAG}"
+          echo "Using tag: ${env.TAG}"
         }
       }
     }
 
-    stage('Docker Hub Login') {
+    stage('Docker Login') {
       steps {
         withCredentials([usernamePassword(
           credentialsId: 'dockerhub-creds',
           usernameVariable: 'DH_USER',
           passwordVariable: 'DH_PASS'
         )]) {
-          sh 'echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin'
+          sh '''
+            echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
+          '''
         }
       }
     }
 
+    // Backend
     stage('Build Backend') {
       steps {
         sh """
-          docker build -t ${BACKEND_IMAGE}:latest ./backend
-          docker tag ${BACKEND_IMAGE}:latest ${BACKEND_IMAGE}:${TAG}
+          docker build -t ${BACKEND_IMAGE}:${TAG} ./backend
+          docker tag ${BACKEND_IMAGE}:${TAG} ${BACKEND_IMAGE}:latest
         """
       }
     }
@@ -56,8 +56,8 @@ pipeline {
     stage('Build Frontend') {
       steps {
         sh """
-          docker build -t ${FRONTEND_IMAGE}:latest ./frontend
-          docker tag ${FRONTEND_IMAGE}:latest ${FRONTEND_IMAGE}:${TAG}
+          docker build -t ${FRONTEND_IMAGE}:${TAG} ./frontend
+          docker tag ${FRONTEND_IMAGE}:${TAG} ${FRONTEND_IMAGE}:latest
         """
       }
     }
@@ -74,10 +74,10 @@ pipeline {
       }
     }
 
-    stage('Deploy to K3D') {
+    stage('Deploy to K3d') {
       steps {
         sh """
-          export KUBECONFIG=${KUBECONFIG}
+          export KUBECONFIG=$KUBECONFIG
 
           kubectl set image deployment/backend-deployment backend=${BACKEND_IMAGE}:${TAG}
           kubectl set image deployment/frontend-deployment frontend=${FRONTEND_IMAGE}:${TAG}
@@ -90,11 +90,7 @@ pipeline {
   }
 
   post {
-    success {
-      echo "CI/CD Success: tag = ${env.TAG}"
-    }
-    failure {
-      echo "Pipeline failed!"
-    }
+    success { echo "Deployment successful → ${env.TAG}" }
+    failure { echo "Deployment failed." }
   }
 }
